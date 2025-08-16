@@ -183,8 +183,8 @@ async fn fetcher(state: Arc<AppState>, args: Args, mut shutdown_rx: broadcast::R
 struct Args {
     #[arg(short, long, default_value = "3112", env = "PORT")]
     port: u16,
-    #[arg(long, default_value = "https://envoy.local", env = "ENVOY_HOST")]
-    envoy_host: url::Url,
+    #[arg(long, default_value = "https://envoy.local", env = "ENVOY_URL")]
+    envoy_url: url::Url,
     #[arg(long, env = "ENVOY_JWT")]
     envoy_jwt: String,
     #[arg(long, default_value = "120")]
