@@ -67,8 +67,8 @@ struct SystemState {
     storage_mw: i64,
     grid_mw: i64,
     load_mw: i64,
-    production_wh_today: i64,
-    consumption_wh_today: i64,
+    production_mwh_today: i64,
+    consumption_mwh_today: i64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -135,7 +135,7 @@ async fn fetch_once(state: &AppState, args: &Args) -> anyhow::Result<()> {
         .await?
         .json()
         .await?;
-    println!("{:?}", status_resp);
+    tracing::trace!(response = ?status_resp, "fetched status");
     let mut energy_url = args.envoy_host.clone();
     energy_url.set_path("/ivp/pdm/energy");
     tracing::trace!(url=?energy_url, "fetching");
@@ -147,12 +147,12 @@ async fn fetch_once(state: &AppState, args: &Args) -> anyhow::Result<()> {
         .await?
         .json()
         .await?;
-    println!("{:?}", energy_resp);
+    tracing::trace!(response = ?energy_resp, "fetched energy");
 
     let new_state = SystemState {
         last_update: status_resp.meters.last_update,
-        production_wh_today: energy_resp.production.envoy.watt_hours_today,
-        consumption_wh_today: energy_resp.consumption.envoy.watt_hours_today,
+        production_mwh_today: energy_resp.production.envoy.watt_hours_today * 1000,
+        consumption_mwh_today: energy_resp.consumption.envoy.watt_hours_today * 1000,
         pv_mw: status_resp.meters.pv.aggregate_mw,
         grid_mw: status_resp.meters.grid.aggregate_mw,
         storage_mw: status_resp.meters.storage.aggregate_mw,
@@ -186,7 +186,7 @@ struct Args {
     envoy_host: url::Url,
     #[arg(long, env = "ENVOY_JWT")]
     envoy_jwt: String,
-    #[arg(long, default_value = "300")]
+    #[arg(long, default_value = "120")]
     poll_interval_secs: u32,
 }
 
