@@ -9,7 +9,6 @@ env:
   REGISTRY_IMAGE: ghcr.io/roguelazer/envoyproxy
 jobs:
   build-amd64:
-    needs: [test, formatting]
     runs-on: ubuntu-24.04
     env:
       platform: linux/amd64
@@ -60,7 +59,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
   build-arm64:
-    needs: [test, formatting]
     runs-on: ubuntu-24.04-arm
     env:
       platform: linux/arm64
