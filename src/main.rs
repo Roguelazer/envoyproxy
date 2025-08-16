@@ -94,6 +94,7 @@ struct LivestatusResponse {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct EnergyAggregate {
     #[serde(rename = "wattHoursToday")]
     watt_hours_today: i64,
