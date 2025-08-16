@@ -24,9 +24,12 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          components: rustfmt
+          components: rustfmt, clippy
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
+      - name: Clippy
+        run: |
+          cargo clippy --locked -- -D warnings
   build-images:
     needs: [test, formatting]
     runs-on: ubuntu-latest
