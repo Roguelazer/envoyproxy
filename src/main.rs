@@ -125,7 +125,7 @@ struct EnergyResponse {
 }
 
 async fn fetch_once(state: &AppState, args: &Args) -> anyhow::Result<()> {
-    let mut status_url = args.envoy_host.clone();
+    let mut status_url = args.envoy_url.clone();
     status_url.set_path("/ivp/livedata/status");
     tracing::trace!(url = ?status_url, "fetching");
     let status_resp: LivestatusResponse = state
@@ -137,7 +137,7 @@ async fn fetch_once(state: &AppState, args: &Args) -> anyhow::Result<()> {
         .json()
         .await?;
     tracing::trace!(response = ?status_resp, "fetched status");
-    let mut energy_url = args.envoy_host.clone();
+    let mut energy_url = args.envoy_url.clone();
     energy_url.set_path("/ivp/pdm/energy");
     tracing::trace!(url=?energy_url, "fetching");
     let energy_resp: EnergyResponse = state
