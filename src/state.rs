@@ -7,7 +7,7 @@ use crate::time_series::{TimeSeriesRow, TimeSeriesSummary};
 
 #[derive(Serialize, Debug, Default, Clone)]
 pub struct SystemState {
-    pub last_update: DateTime<Utc>,
+    pub last_update: Option<DateTime<Utc>>,
     pub battery_soc: u32,
     pub pv_mw: i64,
     pub storage_mw: i64,
@@ -77,7 +77,9 @@ impl AppState {
     }
 
     pub async fn update_state(&self, new_state: SystemState) {
-        let dt = new_state.last_update;
+        let Some(dt) = new_state.last_update else {
+            return;
+        };
         let mut time_series_guard = self.time_series.write().await;
         time_series_guard.pv_mw.append(dt, new_state.pv_mw);
         time_series_guard.grid_mw.append(dt, new_state.grid_mw);

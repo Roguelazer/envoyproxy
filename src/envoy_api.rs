@@ -183,7 +183,7 @@ pub async fn fetch_state(
     tracing::trace!(response = ?energy_resp, "fetched energy");
 
     let new_state = SystemState {
-        last_update: status_resp.meters.last_update,
+        last_update: Some(status_resp.meters.last_update),
         production_mwh_today: energy_resp.production.envoy.watt_hours_today * 1000,
         consumption_mwh_today: energy_resp.consumption.envoy.watt_hours_today * 1000,
         pv_mw: status_resp.meters.pv.aggregate_mw,
