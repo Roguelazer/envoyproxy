@@ -92,7 +92,7 @@ impl TimeSeriesRow {
             .iter()
             .filter_map(|(d, s)| {
                 if d >= &yesterday {
-                    Some((d.clone(), s.average))
+                    Some((*d, s.average))
                 } else {
                     None
                 }
@@ -121,9 +121,7 @@ impl TimeSeriesRow {
             .iter()
             .map(|(d, p)| (f(d), d, p))
             .collect::<Vec<_>>();
-        let Some(current_truncated) = schwartz.iter().map(|(h, _, _)| h).max().cloned() else {
-            return None;
-        };
+        let current_truncated = schwartz.iter().map(|(h, _, _)| h).max().cloned()?;
         let current_values: BTreeMap<chrono::DateTime<Utc>, Point> = schwartz
             .iter()
             .filter_map(|(h, d, p)| {
