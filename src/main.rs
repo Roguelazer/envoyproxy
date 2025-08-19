@@ -48,12 +48,11 @@ async fn metrics_prom(State(raw_state): State<Arc<AppState>>) -> impl IntoRespon
                 .label("type", mtype)
                 .set_with_timestamp(source, last_update);
         }
-        let mut battery_gauge =
-            metrics.gauge("battery_soc_percent", "Percent of battery available");
+        let battery_gauge = metrics.gauge("battery_soc_percent", "Percent of battery available");
         battery_gauge.set_with_timestamp(state.battery_soc, last_update);
     }
     let inventory = raw_state.inventory.read().await;
-    let mut battery_cap_gauge = metrics.gauge(
+    let battery_cap_gauge = metrics.gauge(
         "battery_capacity_wh",
         "Total battery capacity in watt-hours",
     );

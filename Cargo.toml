@@ -21,4 +21,4 @@ tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 url = "2.5.4"
 
 [patch.crates-io]
-promformat = { path = "../promformat" }
+promformat = { git = "https://github.com/Roguelazer/promformat", rev = "596808a024482e0227ed0293f9451120ee2b1942" }
