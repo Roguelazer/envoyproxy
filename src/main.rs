@@ -7,6 +7,7 @@ use tokio::{signal, sync::broadcast};
 
 mod envoy_api;
 mod state;
+mod time_series;
 
 use crate::state::{AppState, Inventory, SystemState};
 
@@ -16,12 +17,14 @@ struct ResponseBody {
     state: SystemState,
     #[serde(flatten)]
     inventory: Inventory,
+    history: state::HistoryResponse,
 }
 
 async fn metrics(State(state): State<Arc<AppState>>) -> axum::response::Json<impl Serialize> {
     let response_body = ResponseBody {
         state: state.system_state.read().await.clone(),
         inventory: state.inventory.read().await.clone(),
+        history: state.history().await,
     };
     axum::Json(response_body)
 }
@@ -51,46 +54,83 @@ async fn shutdown_signal(shutdown_tx: broadcast::Sender<()>) {
     shutdown_tx.send(()).expect("should be able to shut down");
 }
 
-async fn fetch_inventory(state: &AppState, args: &Args) -> anyhow::Result<()> {
-    let new_inventory =
-        envoy_api::fetch_inventory(&args.envoy_url, &args.envoy_jwt, &state.client).await?;
+trait BackgroundTask {
+    const LABEL: &'static str;
 
-    let mut guard = state.inventory.write().await;
-    *guard = new_inventory;
+    async fn run(state: &AppState, args: &Args) -> anyhow::Result<()>;
 
-    Ok(())
+    async fn start(
+        state: Arc<AppState>,
+        args: Args,
+        mut shutdown_rx: broadcast::Receiver<()>,
+    ) -> anyhow::Result<()> {
+        let interval = Self::interval(&args);
+        loop {
+            tracing::debug!(label = Self::LABEL, "invoking background task");
+            if let Err(error) = Self::run(state.as_ref(), &args).await {
+                tracing::error!(?error, "{}", Self::LABEL);
+            }
+            tokio::select! {
+                    _ = tokio::time::sleep(interval) => {},
+                    _ = shutdown_rx.recv() => { return Ok(()) }
+            }
+        }
+    }
+
+    fn interval(args: &Args) -> Duration;
 }
 
-async fn fetch_once(state: &AppState, args: &Args) -> anyhow::Result<()> {
-    let new_state = envoy_api::fetch_state(&args.envoy_url, &args.envoy_jwt, &state.client).await?;
+struct FetchInventory {}
 
-    let mut guard = state.system_state.write().await;
-    *guard = new_state;
+impl BackgroundTask for FetchInventory {
+    const LABEL: &'static str = "fetch inventory";
 
-    Ok(())
-}
+    async fn run(state: &AppState, args: &Args) -> anyhow::Result<()> {
+        let new_inventory =
+            envoy_api::fetch_inventory(&args.envoy_url, &args.envoy_jwt, &state.client).await?;
 
-async fn fetcher(state: Arc<AppState>, args: Args, mut shutdown_rx: broadcast::Receiver<()>) {
-    loop {
-        if let Err(error) = fetch_once(state.as_ref(), &args).await {
-            tracing::error!(?error, "Failed to fetch status!");
-        }
-        tokio::select! {
-            _ = tokio::time::sleep(args.poll_interval()) => {},
-            _ = shutdown_rx.recv() => { return }
-        }
+        let mut guard = state.inventory.write().await;
+        *guard = new_inventory;
+
+        Ok(())
+    }
+
+    fn interval(args: &Args) -> Duration {
+        args.inventory_poll_interval()
     }
 }
 
-async fn inv_fetcher(state: Arc<AppState>, args: Args, mut shutdown_rx: broadcast::Receiver<()>) {
-    loop {
-        if let Err(error) = fetch_inventory(state.as_ref(), &args).await {
-            tracing::error!(?error, "Failed to fetch inventory!");
-        }
-        tokio::select! {
-            _ = tokio::time::sleep(args.inventory_poll_interval()) => {},
-            _ = shutdown_rx.recv() => { return }
-        }
+struct FetchState {}
+
+impl BackgroundTask for FetchState {
+    const LABEL: &'static str = "fetch state";
+
+    async fn run(state: &AppState, args: &Args) -> anyhow::Result<()> {
+        let new_state =
+            envoy_api::fetch_state(&args.envoy_url, &args.envoy_jwt, &state.client).await?;
+
+        state.update_state(new_state).await;
+
+        Ok(())
+    }
+
+    fn interval(args: &Args) -> Duration {
+        args.poll_interval()
+    }
+}
+
+struct MaintainState {}
+
+impl BackgroundTask for MaintainState {
+    const LABEL: &'static str = "maintain state";
+
+    async fn run(state: &AppState, _args: &Args) -> anyhow::Result<()> {
+        state.maintain().await;
+        Ok(())
+    }
+
+    fn interval(_args: &Args) -> Duration {
+        Duration::from_secs(1800)
     }
 }
 
@@ -136,17 +176,26 @@ async fn main() -> anyhow::Result<()> {
 
     let (shutdown_tx, mut shutdown_rx) = broadcast::channel(1);
 
+    tracing::trace!("setting up background tasks");
+
     tokio::spawn(shutdown_signal(shutdown_tx));
-    tokio::spawn(fetcher(
+    tokio::spawn(FetchState::start(
         Arc::clone(&state),
         args.clone(),
         shutdown_rx.resubscribe(),
     ));
-    tokio::spawn(inv_fetcher(
+    tokio::spawn(FetchInventory::start(
         Arc::clone(&state),
         args.clone(),
         shutdown_rx.resubscribe(),
     ));
+    tokio::spawn(MaintainState::start(
+        Arc::clone(&state),
+        args.clone(),
+        shutdown_rx.resubscribe(),
+    ));
+
+    tracing::trace!("launching server");
 
     let app = Router::new()
         .route("/metrics.json", get(metrics))
