@@ -81,12 +81,12 @@ pub enum InventoryDeviceRow {
     Collar(Vec<CollarDevice>),
 }
 
-fn to_dtrait<C: std::fmt::Debug>(o: &C) -> Box<&dyn std::fmt::Debug> {
-    Box::new(o)
+fn to_dtrait<C: std::fmt::Debug>(o: &C) -> &dyn std::fmt::Debug {
+    o
 }
 
 impl InventoryDeviceRow {
-    pub fn devices(&self) -> Vec<Box<&dyn std::fmt::Debug>> {
+    pub fn devices(&self) -> Vec<&dyn std::fmt::Debug> {
         match self {
             Self::Encharge(devices) => devices.iter().map(to_dtrait).collect(),
             Self::Enpower(devices) => devices.iter().map(to_dtrait).collect(),
@@ -105,7 +105,7 @@ pub async fn fetch_inventory(
     tracing::trace!(url=?inventory_url, "fetching");
     let inventory_resp: Vec<InventoryDeviceRow> = client
         .get(inventory_url)
-        .bearer_auth(&envoy_jwt)
+        .bearer_auth(envoy_jwt)
         .send()
         .await?
         .json()
@@ -144,7 +144,7 @@ pub async fn fetch_state(
     tracing::trace!(url = ?status_url, "fetching");
     let status_resp: LivestatusResponse = client
         .get(status_url)
-        .bearer_auth(&envoy_jwt)
+        .bearer_auth(envoy_jwt)
         .send()
         .await?
         .json()
@@ -156,7 +156,7 @@ pub async fn fetch_state(
     tracing::trace!(url=?energy_url, "fetching");
     let energy_resp: EnergyResponse = client
         .get(energy_url)
-        .bearer_auth(&envoy_jwt)
+        .bearer_auth(envoy_jwt)
         .send()
         .await?
         .json()
