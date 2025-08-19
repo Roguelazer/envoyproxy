@@ -144,7 +144,7 @@ struct Args {
     envoy_jwt: String,
     #[arg(
         long,
-        default_value = "300",
+        default_value = "60",
         help = "Interval to poll the system state, in seconds"
     )]
     poll_interval_secs: u32,
