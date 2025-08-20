@@ -14,7 +14,7 @@ futures = "0.3.31"
 promformat = { version = "0.4.1", features = ["chrono"] }
 reqwest = { version = "0.12.23", features = ["json", "native-tls"] }
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
+serde_json = "1.0.143"
 tokio = { version = "1.47.1", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
