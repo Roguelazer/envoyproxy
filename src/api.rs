@@ -99,5 +99,5 @@ pub async fn metrics_prom(State(raw_state): State<Arc<AppState>>) -> impl IntoRe
 }
 
 pub async fn root() -> impl IntoResponse {
-    "hi"
+    "This is a tool for monitoring Enphase Envoy-based systems.\n"
 }
