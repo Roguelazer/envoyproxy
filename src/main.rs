@@ -21,6 +21,39 @@ struct ResponseBody {
     history: state::HistoryResponse,
 }
 
+#[derive(Serialize, Debug)]
+struct HealthcheckResponse {
+    is_ok: bool,
+    message: String,
+}
+
+impl HealthcheckResponse {
+    fn new<S: Into<String>>(is_ok: bool, s: S) -> Self {
+        Self {
+            is_ok,
+            message: s.into(),
+        }
+    }
+}
+
+async fn healthcheck(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    let state = state.system_state.read().await;
+    if let Some(last_update) = state.last_update.as_ref() {
+        (
+            axum::http::StatusCode::OK,
+            axum::Json(HealthcheckResponse::new(
+                true,
+                format!("data fetched as of {}", last_update),
+            )),
+        )
+    } else {
+        (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            axum::Json(HealthcheckResponse::new(false, "no data fetched")),
+        )
+    }
+}
+
 async fn metrics_json(State(state): State<Arc<AppState>>) -> axum::response::Json<impl Serialize> {
     let response_body = ResponseBody {
         state: state.system_state.read().await.clone(),
@@ -240,6 +273,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/metrics.json", get(metrics_json))
         .route("/metrics", get(metrics_prom))
+        .route("/health/ok", get(healthcheck))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(("::", args.port))
         .await
