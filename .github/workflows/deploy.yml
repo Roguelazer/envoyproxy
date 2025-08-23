@@ -2,12 +2,24 @@ name: "Deploy"
 on:
   workflow_call:
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 permissions:
-  contents: read
+  contents: write
   packages: write
 env:
   REGISTRY_IMAGE: ghcr.io/roguelazer/envoyproxy
 jobs:
+  generate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Generate Version
+        id: version
+        run: |
+          echo "version=tip-$(date +%Y%m%d.%H%M%S).${GITHUB_SHA:0:4}" >> "$GITHUB_OUTPUT"
   build-amd64:
     runs-on: ubuntu-24.04
     env:
@@ -68,7 +80,7 @@ jobs:
       - name: Prepare
         run: |
           platform=${{ env.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -113,6 +125,7 @@ jobs:
     needs:
       - build-arm64
       - build-amd64
+      - generate-version
     steps:
       - name: Download digests
         uses: actions/download-artifact@v5
@@ -137,6 +150,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
+            type=raw,${{ needs.generate-version.outputs.version }}
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
@@ -145,9 +159,31 @@ jobs:
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |
+          # shellcheck disable=SC2046
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+  crete-tg:
+    runs-on: ubuntu-latest
+    needs:
+    - generate-version
+    - merge
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Create tag
+        id: create-tag
+        run: |
+          git tag ${{ needs.generate-version.outputs.version }} ${{ github.sha }}
+      - name: Push Tag
+        run: git push origin tag ${{ needs.generate-version.outputs.version }}
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          target_commitish: ${{ github.sha }}
+          tag_name: ${{ needs.generate-version.outputs.version }}
+          generate_release_notes: true
+          make_latest: true
