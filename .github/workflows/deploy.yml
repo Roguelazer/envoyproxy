@@ -166,7 +166,8 @@ jobs:
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
-  crete-tg:
+  crete-tag:
+    name: "Create and push git tag"
     runs-on: ubuntu-latest
     needs:
     - generate-version
