@@ -95,25 +95,6 @@ impl InventoryDeviceRow {
     }
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "snake_case")]
-enum OpenClosed {
-    Open,
-    Closed,
-}
-
-#[derive(Deserialize, Debug)]
-enum OnOffGrid {
-    #[serde(rename = "multimode-ongrid")]
-    OnGrid,
-    #[serde(rename = "multimode-offgrid")]
-    OffGrid,
-    #[serde(rename = "grid-tied")]
-    GridTied,
-    #[serde(rename = "unknown")]
-    Unknown,
-}
-
 pub async fn fetch_inventory(
     base_url: &Url,
     envoy_jwt: &str,
