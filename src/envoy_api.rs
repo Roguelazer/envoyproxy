@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::state::{Inventory, SystemState};
@@ -67,8 +67,23 @@ pub struct EnchargeDevice {
 #[derive(Deserialize, Debug)]
 pub struct EnpowerDevice {}
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)]
+pub enum GridState {
+    #[serde(rename = "on-grid", alias = "on_grid")]
+    OnGrid,
+    #[serde(rename = "off-grid", alias = "off_grid")]
+    OffGrid,
+    #[serde(rename = "multimode-ongrid", alias = "multimode_ongrid")]
+    MultiModeOnGrid,
+    #[serde(rename = "multimode-offgrid", alias = "multimode_offgrid")]
+    MultiModeOffGrid,
+}
+
 #[derive(Deserialize, Debug)]
-pub struct CollarDevice {}
+pub struct CollarDevice {
+    pub grid_state: GridState,
+}
 
 #[derive(Deserialize)]
 #[serde(tag = "type", content = "devices")]
@@ -130,6 +145,10 @@ pub async fn fetch_inventory(
                 _ => 0,
             })
             .sum(),
+        grid_state: inventory_resp.iter().find_map(|row| match row {
+            InventoryDeviceRow::Collar(devices) => devices.first().map(|s| s.grid_state),
+            _ => None,
+        }),
     };
     Ok(new_inventory)
 }

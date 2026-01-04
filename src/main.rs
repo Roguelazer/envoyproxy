@@ -2,6 +2,7 @@ use axum::{Router, routing::get};
 use clap::Parser;
 use std::sync::Arc;
 use tokio::{signal, sync::broadcast};
+use tracing_subscriber::prelude::*;
 
 mod api;
 mod args;
@@ -43,7 +44,10 @@ async fn shutdown_signal(shutdown_tx: broadcast::Sender<()>) {
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
 
     let state = Arc::new(AppState::new()?);
 
@@ -68,7 +72,7 @@ async fn main() -> anyhow::Result<()> {
         shutdown_rx.resubscribe(),
     ));
 
-    tracing::trace!("launching server");
+    tracing::trace!(port = args.port, "launching server");
 
     let app = Router::new()
         .route("/metrics.json", get(api::metrics_json))

@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::time::Duration;
 use tokio::sync::RwLock;
 
+use crate::envoy_api::GridState;
 use crate::time_series::{TimeSeriesRow, TimeSeriesSummary};
 
 #[derive(Serialize, Debug, Default, Clone)]
@@ -21,6 +22,7 @@ pub struct SystemState {
 pub struct Inventory {
     pub battery_capacity: u32,
     pub num_batteries: usize,
+    pub grid_state: Option<GridState>,
 }
 
 #[derive(Debug, Default)]
