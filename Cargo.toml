@@ -18,7 +18,7 @@ serde_json = "1.0.148"
 tokio = { version = "1.49.0", features = ["full"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
-url = "2.5.7"
+url = "2.5.8"
 
 [patch.crates-io]
 promformat = { git = "https://github.com/Roguelazer/promformat", rev = "596808a024482e0227ed0293f9451120ee2b1942" }
