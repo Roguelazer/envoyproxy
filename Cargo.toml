@@ -6,7 +6,7 @@ license = "ISC"
 description = "Proxy that summarizes the output from Enphase Envoy"
 
 [dependencies]
-anyhow = "1.0.100"
+anyhow = "1.0.101"
 axum = "0.8.8"
 chrono = { version = "0.4.43", features = ["serde"] }
 clap = { version = "4.5.57", features = ["cargo", "derive", "env"] }
