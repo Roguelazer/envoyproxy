@@ -8,7 +8,7 @@ description = "Proxy that summarizes the output from Enphase Envoy"
 [dependencies]
 anyhow = "1.0.102"
 axum = "0.8.8"
-chrono = { version = "0.4.43", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.5.60", features = ["cargo", "derive", "env"] }
 futures = "0.3.32"
 promformat = { version = "0.4.1", features = ["chrono"] }
