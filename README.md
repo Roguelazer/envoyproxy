@@ -119,5 +119,6 @@ Configuration:
 
  - `ENVOY_JWT`: An authentication token, which you can get by hitting `https://enlighten.enphaseenergy.com/entrez-auth-token?serial_num=YOUR_SERIAL_NUMBER` while logged in to the Enlighten app
  - `ENVOY_HOST`: The base URL of the Envoy system; defaults to https://envoy.local
+ - `STATE_PATH`: A filesystem path where this application can write a SQLite database to persist historical metrics across restarts
 
 Security note: The envoy uses HTTPS but makes up a totally nonsense certificate (self-signed, expires in the past, no SAN, CN is the serial number). Much MITMing could occur here. You should run this on the same LAN as your Envoy gateway.
