@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM rust:1.89-slim-trixie AS chef
+FROM rust:1.94-slim-trixie AS chef
 RUN cargo install cargo-chef
 WORKDIR /app
 

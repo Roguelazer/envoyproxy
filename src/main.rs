@@ -1,5 +1,6 @@
 use axum::{Router, routing::get};
 use clap::Parser;
+use mimalloc::MiMalloc;
 use std::sync::Arc;
 use tokio::{signal, sync::broadcast};
 use tracing_subscriber::prelude::*;
@@ -14,6 +15,9 @@ mod time_series;
 use crate::args::Args;
 use crate::state::AppState;
 use crate::tasks::BackgroundTask;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 async fn shutdown_signal(shutdown_tx: broadcast::Sender<()>) {
     let ctrl_c = async {
@@ -49,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let state = Arc::new(AppState::new()?);
+    let state = Arc::new(AppState::new(&args.state_path)?);
 
     let (shutdown_tx, mut shutdown_rx) = broadcast::channel(1);
 
