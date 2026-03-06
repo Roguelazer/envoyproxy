@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::path::PathBuf;
 use std::time::Duration;
 
 #[derive(Parser, Debug, Clone)]
@@ -21,6 +22,8 @@ pub struct Args {
         help = "Interval to collect system inventory, in seconds"
     )]
     pub inventory_poll_interval_secs: u32,
+    #[arg(long, env = "STATE_PATH", help = "Path to persist history")]
+    pub state_path: PathBuf,
 }
 
 impl Args {
