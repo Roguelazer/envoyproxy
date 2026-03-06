@@ -21,6 +21,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,t
         pkg-config \
         libzstd-dev \
         libssl-dev \
+        libsqlite3-dev \
         --no-install-recommends
 EOF
 
@@ -59,6 +60,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,t
         ca-certificates \
         libssl3t64=3.* \
         dumb-init \
+        libsqlite3-0 \
         --no-install-recommends
     update-ca-certificates
 EOF
