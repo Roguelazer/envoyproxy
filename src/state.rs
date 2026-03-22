@@ -85,14 +85,19 @@ impl TimeSeriesData {
             });
         for row in rows {
             let (history_kind, timestamp, value) = row?;
+            tracing::trace!(?history_kind, ?timestamp, value, "loading a row");
             loaded += 1;
             match history_kind {
-                HistoryKind::Pv => self.pv_mw.append(timestamp, value),
-                HistoryKind::Grid => self.grid_mw.append(timestamp, value),
-                HistoryKind::Load => self.load_mw.append(timestamp, value),
-                HistoryKind::Storage => self.storage_mw.append(timestamp, value),
+                HistoryKind::Pv => self.pv_mw.append_raw(timestamp, value),
+                HistoryKind::Grid => self.grid_mw.append_raw(timestamp, value),
+                HistoryKind::Load => self.load_mw.append_raw(timestamp, value),
+                HistoryKind::Storage => self.storage_mw.append_raw(timestamp, value),
             }
         }
+        self.pv_mw.aggregate();
+        self.grid_mw.aggregate();
+        self.load_mw.aggregate();
+        self.storage_mw.aggregate();
         tracing::debug!(?loaded, "finished load of historical data from database");
         Ok(())
     }

@@ -75,9 +75,13 @@ pub struct TimeSeriesSummary {
 
 impl TimeSeriesRow {
     pub fn append<H: chrono::TimeZone>(&mut self, dt: DateTime<H>, datum: Point) {
+        self.append_raw(dt, datum);
+        self.aggregate();
+    }
+
+    pub fn append_raw<H: chrono::TimeZone>(&mut self, dt: DateTime<H>, datum: Point) {
         let utc = dt.with_timezone(&Utc);
         self.raw_data.insert(utc, datum);
-        self.aggregate();
     }
 
     pub fn summary(&self) -> TimeSeriesSummary {
@@ -138,7 +142,7 @@ impl TimeSeriesRow {
         ))
     }
 
-    fn aggregate(&mut self) {
+    pub fn aggregate(&mut self) {
         if let Some((dt, stat)) = self.aggregate_generic(truncate_to_hour) {
             self.hourly_data.insert(dt, stat);
         }
