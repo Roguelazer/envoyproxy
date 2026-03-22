@@ -60,9 +60,12 @@ pub struct TimeSeriesData {
 }
 
 impl TimeSeriesData {
+    #[tracing::instrument(skip_all)]
     fn load_from_db(&mut self, db: &mut rusqlite::Connection) -> anyhow::Result<()> {
+        tracing::debug!("beginning load of historical data from database");
         let mut stmt =
             db.prepare("SELECT kind, timestamp, value FROM history ORDER BY 1, 2 ASC")?;
+        let mut loaded = 0;
         let rows = stmt
             .query_map([], |row| -> rusqlite::Result<(u8, i64, i64)> {
                 let history_kind: u8 = row.get(0)?;
@@ -82,6 +85,7 @@ impl TimeSeriesData {
             });
         for row in rows {
             let (history_kind, timestamp, value) = row?;
+            loaded += 1;
             match history_kind {
                 HistoryKind::Pv => self.pv_mw.append(timestamp, value),
                 HistoryKind::Grid => self.grid_mw.append(timestamp, value),
@@ -89,6 +93,7 @@ impl TimeSeriesData {
                 HistoryKind::Storage => self.storage_mw.append(timestamp, value),
             }
         }
+        tracing::debug!(?loaded, "finished load of historical data from database");
         Ok(())
     }
 }
@@ -112,6 +117,7 @@ pub struct AppState {
 impl AppState {
     pub fn new<P: AsRef<Path>>(store_path: P) -> anyhow::Result<Self> {
         let store_path = store_path.as_ref();
+        tracing::debug!("initializing network client");
         let client = reqwest::Client::builder()
             .use_native_tls()
             // envoy makes up totally bogus certs
@@ -123,6 +129,7 @@ impl AppState {
         let inventory = RwLock::new(Inventory::default());
         let mut time_series = TimeSeriesData::default();
         let mut db = rusqlite::Connection::open(store_path)?;
+        tracing::debug!(?store_path, "initializing time-series database");
         db.execute_batch(
             r#"
             CREATE TABLE IF NOT EXISTS history(
