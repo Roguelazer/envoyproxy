@@ -94,10 +94,10 @@ impl TimeSeriesData {
                 HistoryKind::Storage => self.storage_mw.append_raw(timestamp, value),
             }
         }
-        self.pv_mw.aggregate();
-        self.grid_mw.aggregate();
-        self.load_mw.aggregate();
-        self.storage_mw.aggregate();
+        self.pv_mw.aggregate_historical();
+        self.grid_mw.aggregate_historical();
+        self.load_mw.aggregate_historical();
+        self.storage_mw.aggregate_historical();
         tracing::debug!(?loaded, "finished load of historical data from database");
         Ok(())
     }

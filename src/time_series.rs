@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, Datelike, TimeDelta, Timelike, Utc};
+use itertools::Itertools;
 use serde::Serialize;
 
 type Point = i64;
@@ -116,7 +117,20 @@ impl TimeSeriesRow {
         self.raw_data.retain(|d, _| d >= &threshold);
     }
 
-    fn aggregate_generic<F>(&mut self, f: F) -> Option<(DateTime<Utc>, Statistics)>
+    fn aggregate_historical_generic<'a, D, F>(
+        data: D,
+        f: F,
+    ) -> impl Iterator<Item = (DateTime<Utc>, Statistics)> + use<'a, D, F>
+    where
+        F: Fn(&DateTime<Utc>) -> DateTime<Utc>,
+        D: Iterator<Item = (&'a DateTime<Utc>, &'a i64)>,
+    {
+        data.into_group_map_by(|r| f(r.0))
+            .into_iter()
+            .map(|(k, v)| (k, Statistics::from_points(v.into_iter().map(|v| v.1))))
+    }
+
+    fn aggregate_generic<F>(&self, f: F) -> Option<(DateTime<Utc>, Statistics)>
     where
         F: Fn(&DateTime<Utc>) -> DateTime<Utc>,
     {
@@ -142,7 +156,22 @@ impl TimeSeriesRow {
         ))
     }
 
-    pub fn aggregate(&mut self) {
+    pub fn aggregate_historical(&mut self) {
+        self.hourly_data.extend(Self::aggregate_historical_generic(
+            self.raw_data.iter(),
+            truncate_to_hour,
+        ));
+        self.daily_data.extend(Self::aggregate_historical_generic(
+            self.raw_data.iter(),
+            truncate_to_day,
+        ));
+        self.weekly_data.extend(Self::aggregate_historical_generic(
+            self.raw_data.iter(),
+            truncate_to_week,
+        ));
+    }
+
+    fn aggregate(&mut self) {
         if let Some((dt, stat)) = self.aggregate_generic(truncate_to_hour) {
             self.hourly_data.insert(dt, stat);
         }
