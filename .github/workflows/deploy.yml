@@ -177,7 +177,7 @@ jobs:
       - name: Push Tag
         run: git push origin tag ${{ needs.generate-version.outputs.version }}
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           target_commitish: ${{ github.sha }}
           tag_name: ${{ needs.generate-version.outputs.version }}
