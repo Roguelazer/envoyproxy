@@ -40,6 +40,8 @@ jobs:
       cache-mode: max
       cache-scope: envoyproxy
       push: true
+      meta-flavor: |
+        latest=true
       meta-tags: |
         type=ref,event=branch
         type=raw,value=${{needs.generate-version.outputs.version}}
