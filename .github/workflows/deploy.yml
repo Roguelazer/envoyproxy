@@ -70,11 +70,11 @@ jobs:
           echo ${{ secrets.TEST }}
       - name: "Copy images"
         run: |
-          for tag in ${{ steps.meta.outputs.tags }}; do
+          for source in ${{ steps.meta.outputs.tags }}; do
             # TODO: do this better
-            source="${tag//-staging/}"
-            echo "Copying $source to $tag"
-            regctl image copy "$source" "$tag"
+            dest="${tag//-staging/}"
+            echo "Copying $source to $dest"
+            regctl image copy "$source" "$dest"
           done
       - name: Push Tag
         run: git push origin tag ${{ needs.generate-version.outputs.version}}
