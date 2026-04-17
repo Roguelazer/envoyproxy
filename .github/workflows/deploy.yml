@@ -30,6 +30,8 @@ jobs:
       output: image
       platforms: linux/amd64,linux/arm64
       meta-images: ghcr.io/roguelazer/envoyproxy-staging
+      cache: true
+      cache-scope: envoyproxy
       meta-tags: |
         type=ref,event=branch
         type=raw,value=${{needs.generate-version.outputs.version}}
