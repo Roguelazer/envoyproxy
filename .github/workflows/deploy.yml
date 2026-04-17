@@ -32,8 +32,7 @@ jobs:
       meta-images: ghcr.io/roguelazer/envoyproxy-staging
       meta-tags: |
         type=ref,event=branch
-        type=semver,pattern={{version}},value=${{needs.generate-version.outputs.version}}
-        type=semver,pattern={{major}},value=${{needs.generate-version.outputs.version}}
+        type=raw,value=${{needs.generate-version.outputs.version}}
     secrets:
       registry-auths: |
         - registry: ghcr.io
@@ -57,10 +56,11 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/roguelazer/envoyproxy
+          flavor: |
+            latest=true
           tags: |
             type=ref,event=branch
-            type=semver,pattern={{version}},value=${{needs.generate-version.outputs.version}}
-            type=semver,pattern={{major}},value=${{needs.generate-version.outputs.version}}
+            type=raw,value=${{needs.generate-version.outputs.version}}
       - name: "Am I in the env?"
         run: |
           echo ${{ secrets.TEST }}
@@ -69,6 +69,7 @@ jobs:
           for tag in ${{ steps.meta.outputs.tags }}; do
             # TODO: do this better
             source="${tag//-staging/}"
+            echo "Copying $source to $tag"
             regctl image copy "$source" "$tag"
           done
       - name: Push Tag
