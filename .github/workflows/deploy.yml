@@ -8,8 +8,7 @@ concurrency:
 permissions:
   contents: write
   packages: write
-env:
-  REGISTRY_IMAGE: ghcr.io/roguelazer/envoyproxy
+  id-token: write
 jobs:
   generate-version:
     runs-on: ubuntu-latest
@@ -20,153 +19,30 @@ jobs:
         id: version
         run: |
           echo "version=tip-$(date +%Y%m%d.%H%M%S).${GITHUB_SHA:0:4}" >> "$GITHUB_OUTPUT"
-  build-amd64:
-    runs-on: ubuntu-24.04
-    env:
-      platform: linux/amd64
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Prepare
-        run: |
-          platform="${{ env.platform }}"
-          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-      - name: Login to Packages Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
+  build:
+    needs: [generate-version]
+    uses: docker/github-builder/.github/workflows/build.yml@v1
+    permissions:
+      contents: read # to fetch the repository content
+      id-token: write # for signing attestation(s) with GitHub OIDC Token
+      packages: write # for pushing to GHCR
+    with:
+      output: image
+      platforms: linux/amd64,linux/arm64
+      meta-images: ghcr.io/roguelazer/envoyproxy-staging
+      meta-tags: |
+        type=ref,event=branch
+        type=semver,pattern={{version}},value=${{needs.generate-version.outputs.version}}
+        type=semver,pattern={{major}},value=${{needs.generate-version.outputs.version}}
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-        with:
-          install: true
-      - name: Build container
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          platforms: ${{ env.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          file: Dockerfile
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{ env.REGISTRY_IMAGE }}
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
-        run: |
-          mkdir -p ${{ runner.temp }}/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
-      - name: Upload digest
-        uses: actions/upload-artifact@v7
-        with:
-          name: digests-${{ env.PLATFORM_PAIR }}
-          path: ${{ runner.temp }}/digests/*
-          if-no-files-found: error
-          retention-days: 1
-  build-arm64:
-    runs-on: ubuntu-24.04-arm
-    env:
-      platform: linux/arm64
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Prepare
-        run: |
-          platform=${{ env.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-      - name: Login to Packages Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-        with:
-          install: true
-      - name: Build container
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          platforms: ${{ env.platform }}
-          labels: ${{ steps.meta.outputs.labels }}
-          file: Dockerfile
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{ env.REGISTRY_IMAGE }}
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
-        run: |
-          mkdir -p ${{ runner.temp }}/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
-      - name: Upload digest
-        uses: actions/upload-artifact@v7
-        with:
-          name: digests-${{ env.PLATFORM_PAIR }}
-          path: ${{ runner.temp }}/digests/*
-          if-no-files-found: error
-          retention-days: 1
-  merge:
+          username: ${{ secrets.GITHUB_TOKEN }}
+  finalize:
+    environment: release
+    needs: [generate-version, build]
     runs-on: ubuntu-latest
-    needs:
-      - build-arm64
-      - build-amd64
-      - generate-version
-    steps:
-      - name: Download digests
-        uses: actions/download-artifact@v8
-        with:
-          path: ${{ runner.temp }}/digests
-          pattern: digests-*
-          merge-multiple: true
-      - name: Login to Packages Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=raw,${{ needs.generate-version.outputs.version }}
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-      - name: Create manifest list and push
-        working-directory: ${{ runner.temp }}/digests
-        run: |
-          # shellcheck disable=SC2046
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
-  crete-tag:
-    name: "Create and push git tag"
-    runs-on: ubuntu-latest
-    needs:
-      - generate-version
-      - merge
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -174,8 +50,29 @@ jobs:
         id: create-tag
         run: |
           git tag ${{ needs.generate-version.outputs.version }} ${{ github.sha }}
+      - name: Install regctl
+        uses: iarekylew00t/regctl-installer@v4
+      - name: Recompute meta tags
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/roguelazer/envoyproxy
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}},value=${{needs.generate-version.outputs.version}}
+            type=semver,pattern={{major}},value=${{needs.generate-version.outputs.version}}
+      - name: "Am I in the env?"
+        run: |
+          echo ${{ secrets.TEST }}
+      - name: "Copy images"
+        run: |
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            # TODO: do this better
+            source="${tag//-staging/}"
+            regctl image copy "$source" "$tag"
+          done
       - name: Push Tag
-        run: git push origin tag ${{ needs.generate-version.outputs.version }}
+        run: git push origin tag ${{ needs.generate-version.outputs.version}}
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -192,4 +89,4 @@ jobs:
           -d message="${{github.repository}} ${{ github.ref_name }} deployed" \
           -d ttl=86400 \
           -d sound=bike \
-          https://api.pushover.net/1/messages.json
+           https://api.pushover.net/1/messages.json
