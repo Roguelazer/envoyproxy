@@ -31,6 +31,7 @@ jobs:
       platforms: linux/amd64,linux/arm64
       meta-images: ghcr.io/roguelazer/envoyproxy-staging
       cache: true
+      cache-mode: max
       cache-scope: envoyproxy
       meta-tags: |
         type=ref,event=branch
