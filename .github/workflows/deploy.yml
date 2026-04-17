@@ -61,6 +61,11 @@ jobs:
           git tag ${{ needs.generate-version.outputs.version }} ${{ github.sha }}
       - name: Install regctl
         uses: iarekylew00t/regctl-installer@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Recompute meta tags
         id: meta
         uses: docker/metadata-action@v6
