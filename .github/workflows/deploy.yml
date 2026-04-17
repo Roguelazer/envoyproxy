@@ -1,7 +1,13 @@
 name: "Deploy"
 on:
   workflow_call:
-  workflow_dispatch:
+    inputs:
+      image_repo:
+        required: true
+        type: string
+      staging_image_repo:
+        required: true
+        type: string
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
@@ -29,7 +35,7 @@ jobs:
     with:
       output: image
       platforms: linux/amd64,linux/arm64
-      meta-images: ghcr.io/roguelazer/envoyproxy-staging
+      meta-images: ${{ inputs.staging_image_repo }}
       cache: true
       cache-mode: max
       cache-scope: envoyproxy
@@ -58,21 +64,18 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/roguelazer/envoyproxy-staging
+          images: ${{ inputs.staging_image_repo }}
           sep-tags: " "
           flavor: |
             latest=true
           tags: |
             type=ref,event=branch
             type=raw,value=${{needs.generate-version.outputs.version}}
-      - name: "Am I in the env?"
-        run: |
-          echo ${{ secrets.TEST }}
       - name: "Copy images"
         run: |
           for source in ${{ steps.meta.outputs.tags }}; do
-            # TODO: do this better
-            dest="${tag//-staging/}"
+            # shellcheck disable=SC2001
+            dest="$(echo "$source" | sed -e 's,${{ inputs.staging_image_repo }},${{ inputs.image_repo }},')"
             echo "Copying $source to $dest"
             regctl image copy "$source" "$dest"
           done
