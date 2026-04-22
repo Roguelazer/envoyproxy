@@ -9,7 +9,7 @@ description = "Proxy that summarizes the output from Enphase Envoy"
 anyhow = "1.0.102"
 axum = "0.8.9"
 chrono = { version = "0.4.44", features = ["serde"] }
-clap = { version = "4.6.0", features = ["cargo", "derive", "env"] }
+clap = { version = "4.6.1", features = ["cargo", "derive", "env"] }
 itertools = "0.14.0"
 mimalloc = "0.1.48"
 promformat = { version = "0.4.1", features = ["chrono"] }
