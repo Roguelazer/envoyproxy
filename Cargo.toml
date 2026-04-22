@@ -11,7 +11,7 @@ axum = "0.8.9"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.6.0", features = ["cargo", "derive", "env"] }
 itertools = "0.14.0"
-mimalloc = "0.1.48"
+mimalloc = "0.1.49"
 promformat = { version = "0.4.1", features = ["chrono"] }
 reqwest = { version = "0.13.2", features = ["json", "native-tls"] }
 rusqlite = "0.39.0"
