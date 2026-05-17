@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM rust:1.94-slim-trixie AS chef
-RUN cargo install cargo-chef
+FROM rust:1.95-slim-trixie AS chef
+RUN cargo install --locked cargo-chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -53,6 +53,8 @@ RUN <<EOF
     chown -R appuser: /home/appuser
 EOF
 
+ENV APT_CACHEBUST=20260517
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/var/lib/apt,sharing=locked <<EOF
     apt-get update
     apt-get upgrade -y
@@ -72,4 +74,4 @@ COPY --from=build /app/target/release/envoyproxy /usr/local/bin/envoyproxy
 ENTRYPOINT ["/usr/bin/dumb-init"]
 ARG ENVOY_JWT
 LABEL org.opencontainers.image.source=https://github.com/Roguelazer/envoyproxy
-CMD /usr/local/bin/envoyproxy
+CMD ["/usr/local/bin/envoyproxy"]

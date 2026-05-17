@@ -1,2 +1,4 @@
 /target
 /history.sqlite*
+.git/
+.github/
