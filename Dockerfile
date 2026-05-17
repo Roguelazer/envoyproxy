@@ -74,4 +74,4 @@ COPY --from=build /app/target/release/envoyproxy /usr/local/bin/envoyproxy
 ENTRYPOINT ["/usr/bin/dumb-init"]
 ARG ENVOY_JWT
 LABEL org.opencontainers.image.source=https://github.com/Roguelazer/envoyproxy
-CMD /usr/local/bin/envoyproxy
+CMD ["/usr/local/bin/envoyproxy"]
