@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM rust:1.94-slim-trixie AS chef
+FROM rust:1.95-slim-trixie AS chef
 RUN cargo install cargo-chef
 WORKDIR /app
 
@@ -52,6 +52,8 @@ RUN <<EOF
     mkdir -p /home/appuser
     chown -R appuser: /home/appuser
 EOF
+
+ENV APT_CACHEBUST=20260517
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/var/lib/apt,sharing=locked <<EOF
     apt-get update
