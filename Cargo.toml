@@ -12,7 +12,7 @@ chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.6.1", features = ["cargo", "derive", "env"] }
 idna_adapter = "=1.1.0"
 itertools = "0.14.0"
-mimalloc = "0.1.49"
+mimalloc = "0.1.51"
 promformat = { version = "0.4.1", features = ["chrono"] }
 reqwest = { version = "0.13.3", features = ["json", "rustls"] }
 rusqlite = "0.39.0"
