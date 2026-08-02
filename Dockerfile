@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+# hadolint global ignore=DL3008
+
 FROM rust:1.95-slim-trixie AS chef
 RUN cargo install --locked cargo-chef
 WORKDIR /app
@@ -27,7 +29,8 @@ EOF
 
 RUN <<EOF
     mkdir -p /app
-    useradd appuser
+    groupadd -g 1000 appgroup
+    useradd -u 1000 -g appgroup appuser
     chown -R appuser: /app
     mkdir -p /home/appuser
     chown -R appuser: /home/appuser
@@ -47,7 +50,8 @@ FROM docker.io/debian:trixie-slim AS prod
 SHELL ["/bin/bash", "-eu", "-o", "pipefail", "-c"]
 RUN <<EOF
     mkdir -p /app
-    useradd appuser
+    groupadd -g 1000 appgroup
+    useradd -u 1000 -g appgroup appuser
     chown -R appuser: /app
     mkdir -p /home/appuser
     chown -R appuser: /home/appuser
@@ -67,7 +71,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,t
     update-ca-certificates
 EOF
 
-USER appuser
+USER 1000:1000
 
 COPY --from=build /app/target/release/envoyproxy /usr/local/bin/envoyproxy
 
