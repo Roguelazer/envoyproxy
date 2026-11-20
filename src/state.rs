@@ -1,5 +1,5 @@
 use anyhow::Context;
-use chrono::{DateTime, TimeDelta, Utc};
+use jiff::{Timestamp, ZonedDateTime};
 use serde::Serialize;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -11,7 +11,7 @@ use crate::time_series::{TimeSeriesRow, TimeSeriesSummary};
 
 #[derive(Serialize, Debug, Default, Clone)]
 pub struct SystemState {
-    pub last_update: Option<DateTime<Utc>>,
+    pub last_update: Option<Timestamp>,
     pub battery_soc: u32,
     pub pv_mw: i64,
     pub storage_mw: i64,
@@ -77,8 +77,8 @@ impl TimeSeriesData {
                 r.context("error reading from sqlite").and_then(
                     |(history_kind, timestamp, value)| {
                         let history_kind = HistoryKind::try_from(history_kind)?;
-                        let timestamp = DateTime::<Utc>::from_timestamp(timestamp, 0)
-                            .ok_or_else(|| anyhow::anyhow!("invalid timestamp"))?;
+                        let timestamp =
+                            jiff::Timestamp::from_second(timestamp).context("parsing timestamp")?;
                         Ok((history_kind, timestamp, value))
                     },
                 )
@@ -87,6 +87,7 @@ impl TimeSeriesData {
             let (history_kind, timestamp, value) = row?;
             tracing::trace!(?history_kind, ?timestamp, value, "loading a row");
             loaded += 1;
+            let timestamp = timestamp.to_zoned_datetime(jiff::tz::TimeZone::UTC);
             match history_kind {
                 HistoryKind::Pv => self.pv_mw.append_raw(timestamp, value),
                 HistoryKind::Grid => self.grid_mw.append_raw(timestamp, value),
@@ -192,21 +193,21 @@ impl AppState {
             let tx = db.transaction()?;
             tx.execute(
                 "INSERT INTO history(kind, timestamp, value) VALUES(?1, ?2, ?3)",
-                (HistoryKind::Pv as u8, dt.timestamp(), new_state.pv_mw),
+                (HistoryKind::Pv as u8, dt.as_second(), new_state.pv_mw),
             )?;
             tx.execute(
                 "INSERT INTO history(kind, timestamp, value) VALUES(?1, ?2, ?3)",
-                (HistoryKind::Grid as u8, dt.timestamp(), new_state.grid_mw),
+                (HistoryKind::Grid as u8, dt.as_second(), new_state.grid_mw),
             )?;
             tx.execute(
                 "INSERT INTO history(kind, timestamp, value) VALUES(?1, ?2, ?3)",
-                (HistoryKind::Load as u8, dt.timestamp(), new_state.load_mw),
+                (HistoryKind::Load as u8, dt.as_second(), new_state.load_mw),
             )?;
             tx.execute(
                 "INSERT INTO history(kind, timestamp, value) VALUES(?1, ?2, ?3)",
                 (
                     HistoryKind::Storage as u8,
-                    dt.timestamp(),
+                    dt.as_second(),
                     new_state.storage_mw,
                 ),
             )?;
@@ -227,14 +228,14 @@ impl AppState {
         time_series_guard.storage_mw.maintain();
         drop(time_series_guard);
         let db = self.db.clone();
-        const HISTORY_RETAIN: TimeDelta = TimeDelta::days(14);
-        let threshold = Utc::now() - HISTORY_RETAIN;
+        const HISTORY_RETAIN: Duration = Duration::from_secs(86400 * 14);
+        let threshold = ZonedDateTime::now() - HISTORY_RETAIN;
         if let Err(err) = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
             let mut db = db.lock().unwrap();
             let tx = db.transaction()?;
             tx.execute(
                 "DELETE FROM history WHERE timestamp < ?1",
-                [threshold.timestamp()],
+                [threshold.timestamp().as_second()],
             )?;
             tx.commit()?;
             Ok(())

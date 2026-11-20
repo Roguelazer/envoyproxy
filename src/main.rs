@@ -1,6 +1,6 @@
 use axum::{Router, routing::get};
 use clap::Parser;
-use mimalloc::MiMalloc;
+use rustfs_mimalloc::MiMalloc;
 use std::sync::Arc;
 use tokio::{signal, sync::broadcast};
 use tracing_subscriber::prelude::*;
@@ -87,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(("::", args.port))
         .await
         .unwrap();
-    tokio::spawn(async {});
+    tracing::info!("started up on {:?}", listener.local_addr());
     axum::serve(listener, app)
         .with_graceful_shutdown(async move {
             let res = shutdown_rx.recv().await;
