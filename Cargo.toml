@@ -8,14 +8,14 @@ description = "Proxy that summarizes the output from Enphase Envoy"
 [dependencies]
 anyhow = "1.0.102"
 axum = "0.8.9"
-chrono = { version = "0.4.45", features = ["serde"] }
 clap = { version = "4.6.1", features = ["cargo", "derive", "env"] }
 idna_adapter = "=1.1.0"
 itertools = "0.15.0"
-mimalloc = "0.1.52"
-promformat = { version = "0.4.1", features = ["chrono"] }
+jiff = { version = "1.0", features = ["serde"] }
+promformat = { version = "0.4.1", features = ["jiff"] }
 reqwest = { version = "0.13.4", features = ["json", "rustls"] }
-rusqlite = "0.41.0"
+rusqlite = { version = "0.43.0", features = [] }
+rustfs-mimalloc = "0.7"
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.52.3", features = ["full"] }
 tracing = "0.1.44"
@@ -23,4 +23,4 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 url = "2.5.8"
 
 [patch.crates-io]
-promformat = { git = "https://github.com/Roguelazer/promformat", rev = "596808a024482e0227ed0293f9451120ee2b1942" }
+promformat = { git = "https://github.com/Roguelazer/promformat", rev = "c00344543fe9155c290319ca2641017642b5ec5a" }

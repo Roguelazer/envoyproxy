@@ -1,6 +1,5 @@
 use anyhow::Result;
-use chrono::serde::ts_seconds;
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -15,8 +14,8 @@ pub struct MeterDetails {
 #[derive(Deserialize, Debug)]
 pub struct LivestatusMetersResponse {
     pub soc: u32,
-    #[serde(with = "ts_seconds")]
-    pub last_update: DateTime<Utc>,
+    #[serde(with = "jiff::fmt::serde::timestamp::second::required")]
+    pub last_update: Timestamp,
     pub pv: MeterDetails,
     pub storage: MeterDetails,
     pub grid: MeterDetails,
