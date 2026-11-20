@@ -13,7 +13,7 @@ idna_adapter = "=1.1.0"
 itertools = "0.15.0"
 jiff = { version = "1.0", features = ["serde"] }
 promformat = { version = "0.4.1", features = ["jiff"] }
-reqwest = { version = "0.13.4", features = ["json", "rustls"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["charset", "json", "http2", "native-tls"] }
 rusqlite = { version = "0.43.0", features = [] }
 rustfs-mimalloc = "0.7"
 serde = { version = "1.0.228", features = ["derive"] }

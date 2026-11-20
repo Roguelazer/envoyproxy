@@ -125,7 +125,7 @@ impl AppState {
         let store_path = store_path.as_ref();
         tracing::debug!("initializing network client");
         let client = reqwest::Client::builder()
-            .tls_backend_rustls()
+            .tls_backend_native()
             // envoy makes up totally bogus certs
             .danger_accept_invalid_certs(true)
             .danger_accept_invalid_hostnames(true)
