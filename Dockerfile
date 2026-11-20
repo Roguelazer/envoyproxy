@@ -2,7 +2,7 @@
 
 # hadolint global ignore=DL3008
 
-FROM rust:1.95-slim-trixie AS chef
+FROM rust:1.100.0-slim-trixie AS chef
 RUN cargo install --locked cargo-chef
 WORKDIR /app
 
@@ -57,7 +57,7 @@ RUN <<EOF
     chown -R appuser: /home/appuser
 EOF
 
-ENV APT_CACHEBUST=20260517
+ENV APT_CACHEBUST=20261119
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/var/lib/apt,sharing=locked <<EOF
     apt-get update
