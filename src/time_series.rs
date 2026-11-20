@@ -103,7 +103,7 @@ impl TimeSeriesRow {
             .hourly_data
             .iter()
             .filter_map(|(d, s)| {
-                if d >= &yesterday {
+                if d >= yesterday {
                     Some((d.timestamp(), s.average))
                 } else {
                     None
@@ -121,7 +121,7 @@ impl TimeSeriesRow {
 
     pub fn maintain(&mut self) {
         let threshold = ZonedDateTime::now() - Span::new().days(14);
-        self.raw_data.retain(|d, _| d >= &threshold);
+        self.raw_data.retain(|d, _| d >= threshold);
     }
 
     fn aggregate_historical_generic<'a, D, F>(

@@ -21,10 +21,6 @@ repos:
     rev: 21ca5323a9c87ee37a434e0ca908efc0a89daa07 # frozen: v0.21.0
     hooks:
       - id: yamlfmt
-  - repo: https://github.com/rhysd/actionlint
-    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca # frozen: v1.7.12
-    hooks:
-      - id: actionlint
   - repo: https://github.com/crate-ci/typos
     rev: bee27e3a4fd1ea2111cf90ab89cd076c870fce14 # frozen: v1.48.0
     hooks:
@@ -34,3 +30,16 @@ repos:
     hooks:
       - id: hadolint-docker
         entry: ghcr.io/hadolint/hadolint:v2.15.1 hadolint
+  - repo: https://github.com/zendern/pre-commit-hooks
+    rev: cb3feef6aa5b1864d521e8bc84acc35391146974 # frozen: v1.3.0
+    hooks:
+      - id: gh-actions-lock-verify-local
+      - id: gh-actions-lock-verify # manual stage: run in CI with GH_TOKEN
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: f805888065fdb6162e1f800e50bb9460cbd223d6 # v0.37.2
+    hooks:
+      - id: check-dependabot
+  - repo: https://github.com/kjanat/actionlint
+    rev: 220b76cfa568e00ed8b3c476898f849a722b88e2 # frozen: v1.17.1
+    hooks:
+      - id: actionlint
