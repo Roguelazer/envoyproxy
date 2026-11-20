@@ -1,5 +1,5 @@
 use anyhow::Context;
-use jiff::{Timestamp, ZonedDateTime};
+use jiff::Timestamp;
 use serde::Serialize;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -229,13 +229,13 @@ impl AppState {
         drop(time_series_guard);
         let db = self.db.clone();
         const HISTORY_RETAIN: Duration = Duration::from_secs(86400 * 14);
-        let threshold = ZonedDateTime::now() - HISTORY_RETAIN;
+        let threshold = Timestamp::now() - HISTORY_RETAIN;
         if let Err(err) = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
             let mut db = db.lock().unwrap();
             let tx = db.transaction()?;
             tx.execute(
                 "DELETE FROM history WHERE timestamp < ?1",
-                [threshold.timestamp().as_second()],
+                [threshold.as_second()],
             )?;
             tx.commit()?;
             Ok(())
