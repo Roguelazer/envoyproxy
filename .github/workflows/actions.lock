@@ -8,7 +8,7 @@ workflows:
         - 'astral-sh/setup-uv@v10.4.0'
         - 'dtolnay/rust-toolchain@master'
         - 'embarkstudios/cargo-deny-action@v2.1.3'
-        - 'j178/prek-action@v3.1.0'
+        - 'j178/prek-action@v3.1.1'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/deploy.yml':
         - 'actions/checkout@v7.0.1'
@@ -54,9 +54,9 @@ dependencies:
         commit: 'sha1-fc03facb7a858d44637c8823b7f0db3c26b0658e'
         owner_id: 1072572
         repo_id: 614663574
-    'j178/prek-action@v3.1.0':
-        ref: 'v3.1.0'
-        commit: 'sha1-44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d'
+    'j178/prek-action@v3.1.1':
+        ref: 'v3.1.1'
+        commit: 'sha1-7b101f8338a08d2bd6fdb3625e4e7692428763a3'
         owner_id: 10510431
         repo_id: 1052387486
     'softprops/action-gh-release@v3.0.4':
